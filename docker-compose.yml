@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# flx-mcp-documentos: documentos de los agentes de Flexxus con un solo estilo (servidor MCP)
+#
+# Codigo e imagen: bitbucket.org/flexxus_id/flx-mcp-documentos
+# Este repo es solo el stack: lo que Portainer despliega.
+#
+# Cotizacion (cliente y brief tecnico) y brief de integracion (HTML, PDF, Postman, anexo interno).
+# Antes de generar valida la evidencia en flx-mcp-codigo. Los archivos quedan en el volumen y se
+# descargan por http://flx-mcp-documentos_mcp:8103/archivos/... desde la red "flx-agentes".
+# Sin puerto publicado ni token: lo usan los stacks de la red "flx-agentes" con
+# http://flx-mcp-documentos_mcp:8103/mcp.
+#
+# Variables del stack: SERVICE_NAME, NODE, LOKI_URL.
+# ---------------------------------------------------------------------------
+version: '3.6'
+
+services:
+  mcp:
+    image: fabreguesm/flx-mcp-documentos:0.1.0
+    hostname: flx-mcp-documentos
+    networks:
+      - agentes
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+      - CODIGO_MCP_URL=http://flx-mcp-codigo_mcp:8102/mcp
+    # /data: documentos generados (cotizaciones/ y briefs/). Vive en el nodo de NODE.
+    volumes:
+      - datos:/data
+    deploy:
+      placement:
+        constraints: ["${NODE}"]
+      restart_policy:
+        condition: any
+        delay: 10s
+    logging:
+      driver: loki
+      options:
+        loki-url: ${LOKI_URL}
+
+volumes:
+  datos:
+    name: "${SERVICE_NAME}_datos"
+
+networks:
+  agentes:
+    external: true
+    name: flx-agentes
